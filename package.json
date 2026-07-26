@@ -1,0 +1,25 @@
+{
+  "name": "pi-uv-redirect",
+  "version": "0.1.0",
+  "description": "Redirect Python tooling to uv inside pi-pwsh's pwsh tool, before the command reaches PowerShell.",
+  "license": "MIT",
+  "type": "module",
+  "keywords": ["pi-package", "pi-extension", "uv", "powershell", "pwsh", "windows"],
+  "main": "src/index.ts",
+  "pi": {
+    "extensions": ["./src/index.ts"]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --experimental-strip-types",
+    "test:parse": "pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/test-parse.ps1"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.80.10",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.5.0"
+  }
+}
