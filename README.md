@@ -66,7 +66,13 @@ user's command pass silently — `pwsh` will surface them at execution time.
 With pi:
 
 ```
-pi install git:github.com/<you>/pi-uv-redirect
+pi install npm:@paulcynic/pi-uv-redirect
+```
+
+Or from source:
+
+```
+pi install git:github.com/Paul-Yuchao-Dong/pi-uv-redirect
 ```
 
 Or symlink/copy into `~/.pi/agent/extensions/`.
