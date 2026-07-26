@@ -3,9 +3,28 @@
   "version": "0.1.0",
   "description": "Redirect Python tooling to uv inside pi-pwsh's pwsh tool, before the command reaches PowerShell.",
   "license": "MIT",
+  "author": "Paul-Yuchao-Dong <paulcynic@gmail.com> (https://github.com/Paul-Yuchao-Dong)",
+  "homepage": "https://github.com/Paul-Yuchao-Dong/pi-uv-redirect#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Paul-Yuchao-Dong/pi-uv-redirect.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Paul-Yuchao-Dong/pi-uv-redirect/issues"
+  },
   "type": "module",
-  "keywords": ["pi-package", "pi-extension", "uv", "powershell", "pwsh", "windows"],
+  "keywords": ["pi-package", "pi-extension", "uv", "powershell", "pwsh", "windows", "python", "pip", "poetry"],
   "main": "src/index.ts",
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE",
+    "CONTEXT.md",
+    "docs"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "pi": {
     "extensions": ["./src/index.ts"]
   },
