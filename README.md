@@ -1,14 +1,14 @@
 # pi-uv-redirect
 
-A pi extension that sits in front of [`pi-pwsh`](https://github.com/andi0b/pi-pwsh)'s
-`pwsh` tool and redirects Python tooling to [`uv`](https://docs.astral.sh/uv/) before
+A pi extension that sits in front of pi's built-in `powershell` tool and
+redirects Python tooling to [`uv`](https://docs.astral.sh/uv/) before
 the command reaches PowerShell.
 
-It is a Windows, pi-pwsh-concurrent port of
+It is a Windows port of
 [mitsuhiko's `uv.ts`](https://github.com/mitsuhiko/agent-stuff/blob/main/extensions/uv.ts).
 That extension wraps the **`bash`** tool to prepend PATH shims and a `spawnHook` —
-which doesn't work on this stack, because pi-pwsh disables `bash` and registers a
-`pwsh` tool whose spawn layer uvt cannot reach. See
+which doesn't work on this stack, because the `powershell` tool owns a spawn
+layer a companion extension cannot reach. See
 [`docs/adr/0001-intercept-at-tool-call-in-front-of-pi-pwsh.md`](./docs/adr/0001-intercept-at-tool-call-in-front-of-pi-pwsh.md)
 for why this extension intercepts at pi's `tool_call` event instead.
 
@@ -29,7 +29,7 @@ for why this extension intercepts at pi's `tool_call` event instead.
 ## Scope (the contract)
 
 Only `python`/`python3`/`pip`/`pip3`/`poetry` appearing as a command-position
-`CommandAst` at the **top parse surface** of the `pwsh` command string are
+`CommandAst` at the **top parse surface** of the `powershell` command string are
 intercepted. The following are accepted leaks and serve as the deliberate escape
 hatch (see `CONTEXT.md`, *Top-parse-surface scope*):
 
@@ -46,7 +46,7 @@ redirect, no `uv pip` mis-block).
 If the parser pass fails by infrastructure error (spawn failure, non-zero exit,
 invalid JSON, or a 4s timeout), the command passes through **unmodified** and the
 user gets a transient notification; the model is not told. Syntax errors in the
-user's command pass silently — `pwsh` will surface them at execution time.
+user's command pass silently — `powershell` will surface them at execution time.
 
 > **Latency note:** each command that passes the pre-filter (mentions
 > `python`/`pip`/`poetry`) pays one `pwsh` spawn (~700ms steady-state, ~2.3s
@@ -56,10 +56,9 @@ user's command pass silently — `pwsh` will surface them at execution time.
 
 ## Requirements
 
-- [`pi-pwsh`](https://github.com/andi0b/pi-pwsh) installed and active (provides
-  the `pwsh` tool). If pi-pwsh isn't running, this extension is inert and tells
-  you once on session start.
-- `pwsh` (PowerShell 7+) on PATH.
+- pi's built-in `powershell` tool active (ships with pi on Windows). If it
+  isn't active, this extension is inert and tells you once on session start.
+- `pwsh` (PowerShell 7+) on PATH for the parser pass.
 
 ## Install
 

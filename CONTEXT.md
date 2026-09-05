@@ -1,12 +1,13 @@
 # pi-uv-redirect
 
-A pi extension that intercepts `pwsh` tool calls (registered by `pi-pwsh`) and
+A pi extension that intercepts `powershell` tool calls (pi's built-in
+PowerShell tool on Windows) and
 redirects Python tooling to `uv`, before the command reaches PowerShell.
 
 ## Language
 
 **Interceptor**:
-A pi extension that listens to the `tool_call` event for the `pwsh` tool and
+A pi extension that listens to the `tool_call` event for the `powershell` tool and
 blocks or rewrites the command string before it executes.
 _Avoid_: Wrapper, shim wrapper
 
@@ -29,7 +30,7 @@ positions, which correspond exactly to segment-leader command positions.
 **Pre-filter**:
 A cheap JavaScript regex over the raw command string run before spawning the
 PowerShell parser. If it finds no `python`/`python3`/`pip`/`pip3`/`poetry` word,
-the handler returns without parsing, so the vast majority of `pwsh` calls pay
+the handler returns without parsing, so the vast majority of `powershell` calls pay
 no parser cost.
 
 **Parser pass**:
@@ -41,7 +42,7 @@ even inside here-strings and array literals.
 
 **Top-parse-surface scope (the extension's contract)**:
 Only `python`/`python3`/`pip`/`pip3`/`poetry` that appear as a command-position
-`CommandAst` at the top parse surface of the `pwsh` command string are
+`CommandAst` at the top parse surface of the `powershell` command string are
 intercepted. Explicit-path invocations (`.\x\python.exe ...`), the Windows `py`
 launcher, and bare names buried inside strings that another command later
 dynamically re-evaluates (`Invoke-Expression "python x"`, `Start-Pty -Command`,
@@ -105,11 +106,10 @@ unrelated context; the parser can tell them apart, so the skip is not ported.
 not arise in practice.
 
 **Inactive notice**:
-The extension loads unconditionally but only intercepts the `pwsh` tool. On
-`session_start`, after a `setImmediate` deferral so pi-pwsh's async registration
-has settled, it checks `pi.getActiveTools()` for `pwsh`; if absent it emits a
-one-time `ctx.ui.notify` warning that uv-redirect is inactive (pi-pwsh not
-running). This keeps "I'm silently inert" from masquerading as "I'm protecting
+The extension loads unconditionally but only intercepts the `powershell` tool. On
+`session_start`, after a `setImmediate` deferral so pi's async tool registration
+has settled, it checks `pi.getActiveTools()` for `powershell`; if absent it emits a
+one-time `ctx.ui.notify` warning that uv-redirect is inactive. This keeps "I'm silently inert" from masquerading as "I'm protecting
 you," consistent with the fail-open transparency posture.
 
 **Case-insensitivity (platform-driven)**:

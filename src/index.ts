@@ -1,11 +1,11 @@
 // pi-uv-redirect entry point.
 //
 // Registers two pi hooks:
-//   - tool_call on "pwsh": pre-filter -> parser pass -> decide -> block or
+//   - tool_call on "powershell": pre-filter -> parser pass -> decide -> block or
 //     redirect (mutate event.input.command in place) or passthrough (incl.
 //     fail-open on any parser infrastructure failure, with a user-only notify).
-//   - session_start: after setImmediate, if pi-pwsh's "pwsh" tool is not in
-//     pi.getActiveTools(), emit a one-time inactive notice.
+//   - session_start: after setImmediate, if pi's built-in "powershell" tool is
+//     not in pi.getActiveTools(), emit a one-time inactive notice.
 //
 // The orchestration core (preFilter / processCommand) is pure and exported so it
 // can be unit-tested without a pi runtime. The parser pass comes from parse.ts;
@@ -64,21 +64,21 @@ let inactiveNotified = false;
 
 export default function uvRedirect(pi: ExtensionAPI): void {
   pi.on("session_start", (_event, ctx) => {
-    // Defer so pi-pwsh's async tool registration has settled before we inspect
+    // Defer so pi's async tool registration has settled before we inspect
     // the active tool set. Without the deferral we'd race the registration and
     // could falsely report "inactive".
     setImmediate(() => {
       try {
         const active = pi.getActiveTools() ?? [];
-        if (!active.includes("pwsh") && !inactiveNotified) {
+        if (!active.includes("powershell") && !inactiveNotified) {
           inactiveNotified = true;
           ctx.ui.notify(
-            "pi-uv-redirect is inert: the pwsh tool is not active (pi-pwsh not running?). " +
-              "Python redirecting to uv is disabled until pi-pwsh is active.",
+            "pi-uv-redirect is inert: the powershell tool is not active. " +
+              "Python redirecting to uv is disabled until the powershell tool is active.",
             "info",
           );
-        } else if (active.includes("pwsh")) {
-          inactiveNotified = false; // pwsh came back; allow a future notice again
+        } else if (active.includes("powershell")) {
+          inactiveNotified = false; // powershell came back; allow a future notice again
         }
       } catch {
         // getActiveTools not ready yet — stay silent (will retry next session_start).
@@ -87,12 +87,12 @@ export default function uvRedirect(pi: ExtensionAPI): void {
   });
 
   pi.on("tool_call", async (event, ctx) => {
-    if (event.toolName !== "pwsh") return;
+    if (event.toolName !== "powershell") return;
     const input = event.input as { command?: string } | undefined;
     const command = input?.command;
     if (typeof command !== "string" || command.length === 0) return;
 
-    // Fast path: the vast majority of pwsh calls don't mention Python tooling.
+    // Fast path: the vast majority of powershell calls don't mention Python tooling.
     if (!preFilter(command)) return;
 
     let parserResult: ParseResult;

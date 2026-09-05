@@ -4,9 +4,8 @@
 // Failure handling (see CONTEXT.md "Fail-open"): spawn error, non-zero exit,
 // invalid JSON, or a 4s timeout all yield { ok:false, errorKind }. The tool_call
 // handler then passes the command through unmodified and notifies the user.
-// On timeout the wedged pwsh is reclaimed with `taskkill /T /F`, mirroring
-// pi-pwsh's Windows tree-kill (we copy the pattern; we do not depend on
-// pi-pwsh internals).
+// On timeout the wedged pwsh process tree is reclaimed with `taskkill /T /F`
+// (Windows tree-kill).
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";

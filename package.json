@@ -1,7 +1,7 @@
 {
   "name": "@paulcynic/pi-uv-redirect",
-  "version": "0.1.0",
-  "description": "Redirect Python tooling to uv inside pi-pwsh's pwsh tool, before the command reaches PowerShell.",
+  "version": "0.2.0",
+  "description": "Redirect Python tooling to uv inside pi's powershell tool, before the command reaches PowerShell.",
   "license": "MIT",
   "author": "Paul-Yuchao-Dong <paulcynic@gmail.com> (https://github.com/Paul-Yuchao-Dong)",
   "homepage": "https://github.com/Paul-Yuchao-Dong/pi-uv-redirect#readme",
@@ -16,7 +16,7 @@
     "access": "public"
   },
   "type": "module",
-  "keywords": ["pi-package", "pi-extension", "uv", "powershell", "pwsh", "windows", "python", "pip", "poetry"],
+  "keywords": ["pi-package", "pi-extension", "uv", "powershell", "windows", "python", "pip", "poetry"],
   "main": "src/index.ts",
   "files": [
     "src",
@@ -40,7 +40,7 @@
     "@earendil-works/pi-coding-agent": "*"
   },
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "^0.80.10",
+    "@earendil-works/pi-coding-agent": "^0.85.1",
     "@types/node": "^24.0.0",
     "typescript": "^5.5.0"
   }
