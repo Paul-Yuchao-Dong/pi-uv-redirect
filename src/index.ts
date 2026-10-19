@@ -6,14 +6,39 @@
 //     fail-open on any parser infrastructure failure, with a user-only notify).
 //   - session_start: after setImmediate, if pi's built-in "powershell" tool is
 //     not in pi.getActiveTools(), emit a one-time inactive notice.
+//     PI_UV_REDIRECT_DEBUG=1 also traces the startup tool-set timeline to
+//     PI_UV_REDIRECT_LOG (default <TEMP>/pi-uv-redirect.log), because another
+//     extension can narrow the active set for ~1s mid-startup (pi-herdsman does)
+//     and a single snapshot then reports "inert" for a tool that is active.
 //
 // The orchestration core (preFilter / processCommand) is pure and exported so it
 // can be unit-tested without a pi runtime. The parser pass comes from parse.ts;
 // the decision layer from decide.ts.
+import { appendFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 import { decide, applySplices } from "./decide.ts";
 import { runParser, type ParseResult } from "./parse.ts";
+
+// Startup trace, off unless asked for. Logging must never break a tool call, so
+// every failure here is swallowed.
+const DEBUG = process.env.PI_UV_REDIRECT_DEBUG === "1";
+const DEBUG_LOG =
+  process.env.PI_UV_REDIRECT_LOG ?? join(tmpdir(), "pi-uv-redirect.log");
+
+function trace(tag: string, data: unknown): void {
+  if (!DEBUG) return;
+  try {
+    appendFileSync(
+      DEBUG_LOG,
+      `${new Date().toISOString()} pid=${process.pid} ${tag} ${JSON.stringify(data)}\n`,
+    );
+  } catch {
+    // ignore: tracing is best-effort
+  }
+}
 
 // Pre-filter: a cheap regex over the raw command before spawning the parser.
 // Returns true if the command MIGHT contain an interceptable bare name, i.e.
@@ -62,14 +87,61 @@ export function processCommand(
 
 let inactiveNotified = false;
 
+// Records every change of the active tool set for the first 10s after startup, so
+// a transient narrowing by another extension shows up as its own trace line.
+function traceToolSetChanges(pi: ExtensionAPI): void {
+  const startedAt = Date.now();
+  let last: string | undefined;
+  const tick = (): void => {
+    let tools: string[];
+    try {
+      tools = pi.getActiveTools() ?? [];
+    } catch (error) {
+      trace("tools_error", {
+        atMs: Date.now() - startedAt,
+        error: String(error),
+      });
+      return;
+    }
+    const signature = tools.join(",");
+    if (signature !== last) {
+      last = signature;
+      trace("tools_changed", {
+        atMs: Date.now() - startedAt,
+        count: tools.length,
+        hasPowershell: tools.includes("powershell"),
+        tools,
+      });
+    }
+    if (Date.now() - startedAt < 10_000) setTimeout(tick, 10);
+  };
+  setImmediate(tick);
+}
+
 export default function uvRedirect(pi: ExtensionAPI): void {
-  pi.on("session_start", (_event, ctx) => {
+  pi.on("session_start", (event, ctx) => {
+    const startedAt = Date.now();
+    try {
+      trace("session_start", {
+        reason: (event as { reason?: string } | undefined)?.reason,
+        tools: pi.getActiveTools() ?? [],
+      });
+    } catch {
+      // getActiveTools may not be ready yet; the deferred check below reports it
+    }
+    if (DEBUG) traceToolSetChanges(pi);
     // Defer so pi's async tool registration has settled before we inspect
     // the active tool set. Without the deferral we'd race the registration and
     // could falsely report "inactive".
     setImmediate(() => {
       try {
         const active = pi.getActiveTools() ?? [];
+        trace("startup_check", {
+          atMs: Date.now() - startedAt,
+          count: active.length,
+          hasPowershell: active.includes("powershell"),
+          tools: active,
+        });
         if (!active.includes("powershell") && !inactiveNotified) {
           inactiveNotified = true;
           ctx.ui.notify(
